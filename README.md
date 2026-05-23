@@ -46,3 +46,12 @@ This is a WhatsApp bot built with TypeScript and Baileys.
    ```bash
    npm run build
    ```
+
+## Keeping the Bot Running
+
+For the bot to always work, it must run continuously.
+* **Locally**: Keep `npm run dev` running in your terminal.
+* **Cloud**: Deploy to a persistent server.
+  * **Do not use serverless (Vercel, Netlify, etc.)**: They terminate active processes, causing the WhatsApp WebSocket connection to be lost.
+  * **Free hosting options**: Render (Web Service), Oracle Cloud Always Free Tier, etc.
+  * **VPS hosting**: Buying a VPS (e.g., Hetzner, DigitalOcean) is a reliable option for persistent hosting.
