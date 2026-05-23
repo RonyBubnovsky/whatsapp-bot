@@ -65,6 +65,18 @@ export const connectToWhatsApp = async (): Promise<void> => {
 
     for (const msg of messages) {
       if (!msg.message) continue;
+
+      if (process.env.NODE_ENV !== 'production') {
+        log.debug(
+          {
+            chatId: msg.key.remoteJid,
+            fromMe: msg.key.fromMe,
+            messageKeys: Object.keys(msg.message),
+          },
+          'Upsert message'
+        );
+      }
+
       if (msg.key.fromMe) continue;
 
       // Skip historical / offline messages synced on connection
