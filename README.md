@@ -9,6 +9,8 @@ This is a WhatsApp bot built with TypeScript and Baileys.
 3. Automatically replies to a specific person in that group chat when they send a message.
 4. Uses a random human-like delay (1-4 seconds) before replying.
 5. Limits how many times it replies to the same person to prevent spam.
+6. Sleeps between 03:00 and 07:00 local time (ignores all messages).
+
 
 ## How to setup
 
