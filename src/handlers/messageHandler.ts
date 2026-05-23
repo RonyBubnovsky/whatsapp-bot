@@ -34,7 +34,6 @@ export const handleMessage = async (
     {
       chatId,
       sender,
-      fromMe: msg.key.fromMe,
       hasMessage: !!msg.message,
       messageKeys: msg.message ? Object.keys(msg.message) : [],
     },

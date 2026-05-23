@@ -12,6 +12,7 @@ import pino from 'pino';
 import { handleMessage } from './handlers/messageHandler';
 import { createLogger } from './logger';
 import qrcode from 'qrcode-terminal';
+import { config } from './config';
 
 const log = createLogger('connection');
 
@@ -42,6 +43,23 @@ export const connectToWhatsApp = async (): Promise<void> => {
 
     if (connection === 'open') {
       log.info('Connected to WhatsApp successfully');
+
+      // Resolve target sender LID
+      try {
+        const jid = `${config.targetSenderNumber}@s.whatsapp.net`;
+        const result = await sock.onWhatsApp(jid);
+        if (result && result.length > 0 && result[0].exists) {
+          const resolvedLid = result[0].lid;
+          if (typeof resolvedLid === 'string' && resolvedLid) {
+            config.targetSenderLid = resolvedLid;
+            log.info({ resolvedLid }, 'Resolved target sender LID');
+          }
+        } else {
+          log.warn({ jid }, 'Could not resolve LID for target sender');
+        }
+      } catch (err) {
+        log.error({ err }, 'Failed to resolve target sender LID');
+      }
     }
 
     if (connection === 'close') {

@@ -32,6 +32,7 @@ if (targetGroupId && !/^\d+(-\d+)?@g\.us$/.test(targetGroupId)) {
 export const config = {
   targetSenderNumber,
   targetGroupId,
+  targetSenderLid: '',
 
   logLevel: process.env.LOG_LEVEL || 'info',
   nodeEnv: process.env.NODE_ENV || 'development',

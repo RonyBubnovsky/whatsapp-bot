@@ -29,7 +29,7 @@ export const rules: Rule[] = [
       const targetSenderJid = `${config.targetSenderNumber}@s.whatsapp.net`;
       const isTargetSender = msg.key.participant && 
         (jidNormalizedUser(msg.key.participant) === jidNormalizedUser(targetSenderJid) ||
-         jidNormalizedUser(msg.key.participant) === jidNormalizedUser(`${config.targetSenderNumber}@lid`));
+         (config.targetSenderLid && jidNormalizedUser(msg.key.participant) === jidNormalizedUser(config.targetSenderLid)));
       return !!(isGroup && isTargetSender && !msg.key.fromMe);
     },
 
