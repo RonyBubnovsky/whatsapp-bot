@@ -21,6 +21,9 @@
 // ============================================================
 
 import pino from 'pino';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const isDev = process.env.NODE_ENV !== 'production';
 const level = process.env.LOG_LEVEL || (isDev ? 'debug' : 'info');
