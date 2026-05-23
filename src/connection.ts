@@ -10,7 +10,6 @@ import makeWASocket, {
 import { Boom } from '@hapi/boom';
 import pino from 'pino';
 import { handleMessage } from './handlers/messageHandler';
-import { config } from './config';
 import { createLogger } from './logger';
 import qrcode from 'qrcode-terminal';
 
