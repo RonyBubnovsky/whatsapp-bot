@@ -27,6 +27,8 @@ This is a WhatsApp bot built with TypeScript and Baileys.
    * `RATE_LIMIT_MAX`: How many messages the person can send in 1 hour before getting blocked.
    * `RATE_LIMIT_WINDOW_MS`: How long (in milliseconds) the person is blocked for when they exceed the limit.
    * `LOG_LEVEL`: Log detail level (e.g., "debug" locally to see all messages, "info" on server).
+   * `PORT`: The port the health check server runs on (defaults to `3000`).
+   * `HEALTH_TOKEN`: Secure Bearer authorization token to protect the health check endpoint.
 
 3. Run the bot in development mode:
    ```bash
@@ -47,6 +49,16 @@ This is a WhatsApp bot built with TypeScript and Baileys.
    ```bash
    npm run build
    ```
+
+## Health Check Server
+
+The bot includes a built-in HTTP server to monitor its health. It exposes a GET `/health` endpoint:
+* **Headers**: `Authorization: Bearer <HEALTH_TOKEN>`
+* **Responses**:
+  * `200 OK`: Bot is connected and healthy.
+  * `401 Unauthorized`: Missing or incorrect Bearer token.
+  * `503 Service Unavailable`: Bot is disconnected or connecting.
+  * `500 Internal Server Error`: A decryption error occurred (e.g., keys out of sync). Use this to trigger automated session resets.
 
 ## Keeping the Bot Running
 

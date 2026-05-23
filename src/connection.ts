@@ -13,6 +13,7 @@ import { handleMessage } from './handlers/messageHandler';
 import { createLogger } from './logger';
 import qrcode from 'qrcode-terminal';
 import { config } from './config';
+import { setConnectionState } from './health';
 
 const log = createLogger('connection');
 
@@ -34,6 +35,10 @@ export const connectToWhatsApp = async (): Promise<void> => {
   sock.ev.on('creds.update', saveCreds);
 
   sock.ev.on('connection.update', async ({ connection, lastDisconnect, qr }) => {
+    if (connection) {
+      setConnectionState(connection);
+    }
+
     if (qr) {
       if (qr !== lastQr) {
         lastQr = qr;

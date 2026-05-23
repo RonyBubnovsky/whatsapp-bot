@@ -6,9 +6,13 @@ import { initErrorHandlers } from './utils/errorHandler';
 import { config } from './config';
 import { createLogger } from './logger';
 import { connectToWhatsApp } from './connection';
+import { startHealthCheckServer } from './health';
 
 // Initialize global error handlers first
 initErrorHandlers();
+
+// Start health check server
+startHealthCheckServer();
 
 const log = createLogger('app');
 
