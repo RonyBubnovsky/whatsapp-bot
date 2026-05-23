@@ -42,4 +42,8 @@ export const config = {
   rateLimitMax: parseInt(process.env.RATE_LIMIT_MAX || '5', 10),
   rateLimitWindowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '3600000', 10),
   rateLimitMessage: process.env.RATE_LIMIT_MESSAGE || 'חחחחח',
+
+  // Health check port
+  port: parseInt(process.env.PORT || '3000', 10),
+  healthToken: process.env.HEALTH_TOKEN || '',
 };
