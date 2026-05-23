@@ -41,6 +41,6 @@ jobs:
             npm run build
 
             # Restart the bot - PM2 keeps it alive
-            pm2 restart whatsapp-bot
+            pm2 restart whatsapp-bot --update-env
 
             echo "Deploy complete"

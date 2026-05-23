@@ -4,7 +4,9 @@ import { config } from './config';
 
 const log = createLogger('health');
 
+const startTime = Date.now();
 let hasDecryptionError = false;
+let decryptionErrorTimeout: NodeJS.Timeout | null = null;
 let connectionState: 'open' | 'connecting' | 'close' = 'close';
 
 // Monkey patch console.error to intercept libsignal decryption failures
@@ -18,10 +20,27 @@ console.error = function (...args: any[]) {
     message.includes('MessageCounterError') ||
     message.includes('Failed to decrypt message')
   ) {
+    // Ignore errors during the first 2 minutes of startup (history sync)
+    if (Date.now() - startTime < 120000) {
+      originalConsoleError.apply(console, args);
+      return;
+    }
+
     if (!hasDecryptionError) {
       log.error({ message }, 'Decryption error detected in stderr stream!');
       hasDecryptionError = true;
     }
+
+    // Auto-reset health status after 5 minutes of no new decryption errors
+    if (decryptionErrorTimeout) {
+      clearTimeout(decryptionErrorTimeout);
+    }
+    decryptionErrorTimeout = setTimeout(() => {
+      if (hasDecryptionError) {
+        log.info('Clearing decryption error state (no new errors for 5 minutes)');
+        hasDecryptionError = false;
+      }
+    }, 300000); // 5 minutes
   }
   originalConsoleError.apply(console, args);
 };
