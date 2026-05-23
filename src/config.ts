@@ -13,9 +13,25 @@ if (!targetSenderNumber) {
   );
 }
 
+// Ensure number is only digits (with country code, e.g. 972501234567)
+if (!/^\d+$/.test(targetSenderNumber)) {
+  throw new Error(
+    `Invalid TARGET_SENDER_NUMBER: "${targetSenderNumber}".\n` +
+    `It must contain digits only, with no spaces, symbols, or "@s.whatsapp.net".`
+  );
+}
+
+const targetGroupId = process.env.TARGET_GROUP_ID || '';
+if (targetGroupId && !/^\d+(-\d+)?@g\.us$/.test(targetGroupId)) {
+  throw new Error(
+    `Invalid TARGET_GROUP_ID: "${targetGroupId}".\n` +
+    `It must be a valid group JID ending with "@g.us" (e.g. 120363024823901923@g.us).`
+  );
+}
+
 export const config = {
   targetSenderNumber,
-  targetGroupId: process.env.TARGET_GROUP_ID || '',
+  targetGroupId,
 
   logLevel: process.env.LOG_LEVEL || 'info',
   nodeEnv: process.env.NODE_ENV || 'development',

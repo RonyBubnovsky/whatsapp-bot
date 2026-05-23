@@ -10,6 +10,13 @@
  * @returns true if the bot should be sleeping, false otherwise
  */
 export const isSleepingTime = (startHour = 3, endHour = 7): boolean => {
-  const currentHour = new Date().getHours();
+  const currentHour = parseInt(
+    new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Jerusalem',
+      hour: 'numeric',
+      hour12: false,
+    }).format(new Date()),
+    10
+  );
   return currentHour >= startHour && currentHour < endHour;
 };
