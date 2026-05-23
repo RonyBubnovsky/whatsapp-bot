@@ -8,6 +8,7 @@ import { humanDelay } from '../utils/delay';
 import { createRateLimiter } from '../utils/rateLimiter';
 import { createLogger } from '../logger';
 import { config } from '../config';
+import { isSleepingTime } from '../utils/time';
 
 const log = createLogger('message-handler');
 
@@ -21,6 +22,11 @@ export const handleMessage = async (
   sock: WASocket,
   msg: proto.IWebMessageInfo
 ): Promise<void> => {
+  if (isSleepingTime()) {
+    log.info('Bot is sleeping. Message ignored.');
+    return;
+  }
+
   const chatId = msg.key.remoteJid!;
   const sender = msg.key.participant || chatId;
 
