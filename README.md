@@ -30,7 +30,17 @@ This is a WhatsApp bot built with TypeScript and Baileys.
    npm run dev
    ```
 
-4. Build the bot:
+4. Scan the QR code:
+   The bot will print a QR code in the terminal. Open WhatsApp on your phone, go to Linked Devices, and scan the QR code to connect the bot.
+
+5. How to find the Group ID:
+   * Leave `TARGET_GROUP_ID` empty in your `.env` file.
+   * Run the bot and send a message in the target group chat from your phone.
+   * Look at the terminal logs. You will see a line with `chatId` ending in `@g.us` (for example, `120363231234567890@g.us`).
+   * Copy that group JID and paste it as `TARGET_GROUP_ID` in your `.env` file.
+   * Restart the bot (press `Ctrl + C` and then run `npm run dev` again).
+
+6. Build the bot:
    ```bash
    npm run build
    ```
