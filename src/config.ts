@@ -25,7 +25,7 @@ const targetGroupId = process.env.TARGET_GROUP_ID || '';
 if (targetGroupId && !/^\d+(-\d+)?@g\.us$/.test(targetGroupId)) {
   throw new Error(
     `Invalid TARGET_GROUP_ID: "${targetGroupId}".\n` +
-    `It must be a valid group JID ending with "@g.us" (e.g. 120363024823901923@g.us).`
+    `It must be a valid group JID ending with "@g.us".`
   );
 }
 
@@ -42,6 +42,10 @@ export const config = {
   rateLimitMax: parseInt(process.env.RATE_LIMIT_MAX || '5', 10),
   rateLimitWindowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '3600000', 10),
   rateLimitMessage: process.env.RATE_LIMIT_MESSAGE || 'חחחחח',
+
+  // Redis configuration
+  useRedis: process.env.USE_REDIS === 'true',
+  redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
 
   // Health check port
   port: parseInt(process.env.PORT || '3000', 10),
