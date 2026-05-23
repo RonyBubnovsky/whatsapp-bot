@@ -42,7 +42,7 @@ export const handleMessage = async (
 
   for (const rule of rules) {
     if (rule.condition(msg)) {
-      const result = rateLimiter.check(sender);
+      const result = await rateLimiter.check(sender);
 
       if (result.status === 'blocked') {
         return;

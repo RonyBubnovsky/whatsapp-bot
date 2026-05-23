@@ -7,7 +7,9 @@
 //   Messages beyond that: blocked silently until the window resets
 // ============================================================
 
+import { createClient } from 'redis';
 import { createLogger } from '../logger';
+import { config } from '../config';
 
 const log = createLogger('rate-limiter');
 
@@ -34,12 +36,115 @@ interface SenderRecord {
   warningSent: boolean;
 }
 
+// Redis Client Setup
+type RedisClientType = ReturnType<typeof createClient>;
+let redisClient: RedisClientType | null = null;
+let isRedisConnected = false;
+
+if (config.useRedis) {
+  redisClient = createClient({
+    url: config.redisUrl,
+    socket: {
+      reconnectStrategy: (retries) => {
+        const delay = Math.min(retries * 100, 3000);
+        log.warn({ retries, delay }, 'Redis reconnecting...');
+        return delay;
+      },
+    },
+  });
+
+  redisClient.on('connect', () => {
+    log.info('Redis connecting...');
+  });
+
+  redisClient.on('ready', () => {
+    isRedisConnected = true;
+    log.info('Redis client ready');
+  });
+
+  redisClient.on('error', (err) => {
+    isRedisConnected = false;
+    log.error({ err }, 'Redis client error');
+  });
+
+  redisClient.on('end', () => {
+    isRedisConnected = false;
+    log.warn('Redis connection closed');
+  });
+
+  redisClient.connect().catch((err) => {
+    log.error({ err }, 'Failed to connect to Redis initially');
+  });
+}
+
 export const createRateLimiter = (options: RateLimiterOptions) => {
   const { maxMessages, windowMs, limitReachedMessage } = options;
 
   const senders = new Map<string, SenderRecord>();
 
-  const check = (senderId: string): RateLimitResult => {
+  // Periodic cleanup of inactive in-memory records to prevent memory leak
+  const pruneInterval = setInterval(() => {
+    const now = Date.now();
+    let pruneCount = 0;
+    for (const [senderId, record] of senders.entries()) {
+      const windowExpired = now - record.windowStart > TRACKING_WINDOW_MS;
+      const blockExpired = now >= record.blockedUntil;
+      if (windowExpired && blockExpired) {
+        senders.delete(senderId);
+        pruneCount++;
+      }
+    }
+    if (pruneCount > 0) {
+      log.info({ pruned: pruneCount }, 'Pruned expired in-memory rate limiter records');
+    }
+  }, TRACKING_WINDOW_MS);
+
+  if (typeof pruneInterval.unref === 'function') {
+    pruneInterval.unref();
+  }
+
+  const check = async (senderId: string): Promise<RateLimitResult> => {
+    // 1. Try Redis rate limiter if enabled and connected
+    if (redisClient && isRedisConnected) {
+      try {
+        const countKey = `rl:${senderId}:count`;
+        const warnKey = `rl:${senderId}:warned`;
+
+        // Increment count atomically
+        const count = await redisClient.incr(countKey);
+
+        // If new window, set the TTL
+        if (count === 1) {
+          await redisClient.pExpire(countKey, windowMs);
+        }
+
+        if (count <= maxMessages) {
+          return { status: 'allowed' };
+        }
+
+        // Exceeded limit - check remaining time in the window
+        const ttl = await redisClient.pTTL(countKey);
+        const warningTtl = ttl > 0 ? ttl : windowMs;
+
+        // Atomically check and set warning flag
+        const warningSet = await redisClient.set(warnKey, '1', {
+          NX: true,
+          PX: warningTtl,
+        });
+
+        if (warningSet === 'OK') {
+          log.warn({ senderId, count }, 'Rate limit reached - sending warning message (Redis)');
+          return { status: 'limit_reached' };
+        }
+
+        log.debug({ senderId, count }, 'Rate limit exceeded - ignoring (Redis)');
+        return { status: 'blocked' };
+      } catch (err) {
+        log.error({ err, senderId }, 'Redis rate limit check failed - falling back to in-memory');
+      }
+    }
+
+    // 2. In-memory fallback
     const now = Date.now();
     const record = senders.get(senderId);
 
@@ -75,7 +180,7 @@ export const createRateLimiter = (options: RateLimiterOptions) => {
       }
 
       // Exceeded limit - block
-      record.blockedUntil = now + windowMs; // Sleep for windowMs (e.g. 20000)
+      record.blockedUntil = now + windowMs;
 
       if (!record.warningSent) {
         record.warningSent = true;

@@ -68,3 +68,36 @@ For the bot to always work, it must run continuously.
   * **Do not use serverless (Vercel, Netlify, etc.)**: They terminate active processes, causing the WhatsApp WebSocket connection to be lost.
   * **Free hosting options**: Render (Web Service), Oracle Cloud Always Free Tier, etc.
   * **VPS hosting**: Buying a VPS (e.g., Hetzner, DigitalOcean) is a reliable option for persistent hosting.
+
+## Rate Limiting & Redis Setup
+
+The bot limits incoming messages per user to prevent spam. You can run this in-memory (default) or with Redis for persistence.
+
+### Option A: In-Memory (No setup required)
+By default, the rate limiter stores data in RAM. It automatically prunes expired records hourly to prevent memory leaks. Set `USE_REDIS=false` in `.env`.
+
+### Option B: Redis (Recommended for production)
+Stores rate-limiting state in Redis. If Redis goes down, the bot falls back gracefully to in-memory tracking.
+
+#### How to install Redis on host VM (Ubuntu/Debian):
+1. **Install Redis server**:
+   ```bash
+   sudo apt update
+   sudo apt install redis-server -y
+   ```
+2. **Start and enable service**:
+   ```bash
+   sudo systemctl enable --now redis-server
+   ```
+3. **Verify Redis is running**:
+   ```bash
+   redis-cli ping
+   # Output should be: PONG
+   ```
+
+#### Enable in configuration:
+Set these values in your `.env` file:
+```env
+USE_REDIS=true
+REDIS_URL=redis://localhost:6379
+```

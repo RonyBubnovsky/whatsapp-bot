@@ -71,6 +71,11 @@ export const connectToWhatsApp = async (): Promise<void> => {
       const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
       const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
 
+      // Clean up event listeners on old socket to prevent memory leak
+      sock.ev.removeAllListeners('connection.update');
+      sock.ev.removeAllListeners('creds.update');
+      sock.ev.removeAllListeners('messages.upsert');
+
       if (shouldReconnect) {
         log.warn({ statusCode }, 'Connection closed, reconnecting in 3s');
         await new Promise(resolve => setTimeout(resolve, 3000));
