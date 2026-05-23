@@ -2,9 +2,13 @@
 // index.ts - Entry point.
 // ============================================================
 
+import { initErrorHandlers } from './utils/errorHandler';
 import { config } from './config';
 import { createLogger } from './logger';
 import { connectToWhatsApp } from './connection';
+
+// Initialize global error handlers first
+initErrorHandlers();
 
 const log = createLogger('app');
 
