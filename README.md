@@ -26,6 +26,7 @@ This is a WhatsApp bot built with TypeScript and Baileys.
    * `CHAT_RESPONSE`: The message the bot sends.
    * `RATE_LIMIT_MAX`: How many messages the person can send in 1 hour before getting blocked.
    * `RATE_LIMIT_WINDOW_MS`: How long (in milliseconds) the person is blocked for when they exceed the limit.
+   * `LOG_LEVEL`: Log detail level (e.g., "debug" locally to see all messages, "info" on server).
 
 3. Run the bot in development mode:
    ```bash
