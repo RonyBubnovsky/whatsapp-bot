@@ -65,6 +65,7 @@ export const connectToWhatsApp = async (): Promise<void> => {
 
     for (const msg of messages) {
       if (!msg.message) continue;
+      if (msg.key.fromMe) continue;
 
       // Skip historical / offline messages synced on connection
       const timestamp = msg.messageTimestamp;
