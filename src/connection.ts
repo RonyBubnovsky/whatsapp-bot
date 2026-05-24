@@ -105,7 +105,8 @@ export const connectToWhatsApp = async (): Promise<void> => {
         );
       }
 
-      if (msg.key.fromMe) continue;
+      // Skip messages sent by the bot itself or sent outside the target group
+      if (msg.key.fromMe || msg.key.remoteJid !== config.targetGroupId) continue;
 
       // Skip historical / offline messages synced on connection
       const timestamp = msg.messageTimestamp;
