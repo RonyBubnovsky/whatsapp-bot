@@ -10,6 +10,7 @@ This is a WhatsApp bot built with TypeScript and Baileys.
 4. Uses a random human-like delay (1-4 seconds) before replying.
 5. Limits how many times it replies to the same person to prevent spam.
 6. Sleeps between 03:00 and 07:00 local time (ignores all messages).
+7. Processes incoming messages sequentially per chat using a self-cleaning in-memory queue to prevent out-of-order replies.
 
 
 ## How to setup
@@ -101,3 +102,10 @@ Set these values in your `.env` file:
 USE_REDIS=true
 REDIS_URL=redis://localhost:6379
 ```
+
+## Message Queue
+
+To ensure the bot feels human and doesn't send overlapping replies, incoming messages are processed sequentially per chat:
+* **Order Preservation**: Messages are queued and handled in the exact order they are received.
+* **Human-like Delays**: The random 1-4 seconds delay executes between replies, rather than concurrently.
+* **Self-Cleaning**: Idle queues are deleted from memory automatically to ensure zero RAM overhead.
