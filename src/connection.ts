@@ -14,6 +14,7 @@ import { createLogger } from './logger';
 import qrcode from 'qrcode-terminal';
 import { config } from './config';
 import { setConnectionState } from './health';
+import { enqueue } from './utils/queue';
 
 const log = createLogger('connection');
 
@@ -121,7 +122,11 @@ export const connectToWhatsApp = async (): Promise<void> => {
         }
       }
 
-      await handleMessage(sock, msg);
+      const chatId = msg.key.remoteJid;
+      const msgId = msg.key.id || 'unknown';
+      if (chatId) {
+        enqueue(chatId, msgId, () => handleMessage(sock, msg));
+      }
     }
   });
 };
