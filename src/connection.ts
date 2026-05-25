@@ -93,6 +93,7 @@ export const connectToWhatsApp = async (): Promise<void> => {
 
     for (const msg of messages) {
       if (!msg.message) continue;
+      if (msg.message.reactionMessage) continue;
 
       if (process.env.NODE_ENV !== 'production') {
         log.debug(
