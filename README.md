@@ -72,7 +72,9 @@ For the bot to always work, it must run continuously.
 
 ## Rate Limiting & Redis Setup
 
-The bot limits incoming messages per user to prevent spam. You can run this in-memory (default) or with Redis for persistence.
+The bot limits incoming messages per user to prevent spam.
+* **Warning Voice Note**: If `chat_response.ogg`, `chat_response.mp4`, or `chat_response.wav` is in the root, it is sent as a voice note warning. Otherwise, it falls back to `RATE_LIMIT_MESSAGE` text.
+* **Storage**: In-memory (default) or Redis.
 
 ### Option A: In-Memory (No setup required)
 By default, the rate limiter stores data in RAM. It automatically prunes expired records hourly to prevent memory leaks. Set `USE_REDIS=false` in `.env`.

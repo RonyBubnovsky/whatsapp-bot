@@ -2,6 +2,8 @@
 // handlers/messageHandler.ts - Processes each incoming message.
 // ============================================================
 
+import fs from 'fs';
+import path from 'path';
 import { WASocket, proto } from '@whiskeysockets/baileys';
 import { rules } from './rules';
 import { humanDelay } from '../utils/delay';
@@ -50,8 +52,35 @@ export const handleMessage = async (
 
       if (result.status === 'limit_reached') {
         await humanDelay();
-        await sock.sendMessage(chatId, { text: rateLimiter.limitReachedMessage });
-        log.info({ sender }, 'Rate limit warning sent');
+        const oggPath = path.join(process.cwd(), 'chat_response.ogg');
+        const mp4Path = path.join(process.cwd(), 'chat_response.mp4');
+        const wavPath = path.join(process.cwd(), 'chat_response.wav');
+
+        if (fs.existsSync(oggPath)) {
+          await sock.sendMessage(chatId, {
+            audio: fs.readFileSync(oggPath),
+            mimetype: 'audio/ogg; codecs=opus',
+            ptt: true,
+          });
+          log.info({ sender, format: 'ogg' }, 'Rate limit warning sent as voice note');
+        } else if (fs.existsSync(mp4Path)) {
+          await sock.sendMessage(chatId, {
+            audio: fs.readFileSync(mp4Path),
+            mimetype: 'audio/mp4',
+            ptt: true,
+          });
+          log.info({ sender, format: 'mp4' }, 'Rate limit warning sent as audio');
+        } else if (fs.existsSync(wavPath)) {
+          await sock.sendMessage(chatId, {
+            audio: fs.readFileSync(wavPath),
+            mimetype: 'audio/wav',
+            ptt: true,
+          });
+          log.info({ sender, format: 'wav' }, 'Rate limit warning sent as WAV audio');
+        } else {
+          await sock.sendMessage(chatId, { text: rateLimiter.limitReachedMessage });
+          log.info({ sender }, 'Rate limit warning sent as text (audio files missing)');
+        }
         return;
       }
 
