@@ -73,7 +73,14 @@ For the bot to always work, it must run continuously.
 ## Rate Limiting & Redis Setup
 
 The bot limits incoming messages per user to prevent spam.
-* **Warning Voice Note**: If `chat_response.ogg`, `chat_response.mp4`, or `chat_response.wav` is in the root, it is sent as a voice note warning. Otherwise, it falls back to `RATE_LIMIT_MESSAGE` text.
+* **Warning Audio**: If `chat_response.ogg`, `chat_response.mp4`, or `chat_response.wav` is in the root, it is sent as the rate-limit warning. `chat_response.ogg` must be OGG Opus because WhatsApp mobile clients reject OGG Vorbis voice notes as malformed. MP4 and WAV files are sent as regular audio. If no safe audio file is available, the bot falls back to `RATE_LIMIT_MESSAGE` text.
+* **Convert the warning file on Ubuntu**: If your current OGG only works on WhatsApp Web, convert it to mobile-safe Opus:
+  ```bash
+  sudo apt update
+  sudo apt install ffmpeg -y
+  mv chat_response.ogg chat_response.vorbis.backup.ogg
+  ffmpeg -i chat_response.vorbis.backup.ogg -vn -ac 1 -ar 48000 -c:a libopus -b:a 32k -application voip -f ogg chat_response.ogg
+  ```
 * **Storage**: In-memory (default) or Redis.
 
 ### Option A: In-Memory (No setup required)
