@@ -84,7 +84,13 @@ export const handleMessage = async (
         return;
       }
 
-      log.info({ rule: rule.name, chatId, sender }, 'Rule matched');
+      const incomingText =
+        msg.message?.conversation ||
+        msg.message?.extendedTextMessage?.text ||
+        msg.message?.imageMessage?.caption ||
+        msg.message?.videoMessage?.caption ||
+        undefined;
+      log.info({ rule: rule.name, chatId, sender, incomingText }, 'Rule matched');
 
       await humanDelay();
 
