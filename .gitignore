@@ -147,3 +147,7 @@ auth_info/
 # Voice recordings
 chat_response.*
 
+# Claude Code local state and Playwright MCP scratch output
+.claude/
+.playwright-mcp/
+

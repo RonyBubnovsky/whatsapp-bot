@@ -15,6 +15,7 @@ import qrcode from 'qrcode-terminal';
 import { config } from './config';
 import { setConnectionState } from './health';
 import { enqueue } from './utils/queue';
+import { isNonContentMessage } from './utils/messageFilter';
 
 const log = createLogger('connection');
 
@@ -93,10 +94,11 @@ export const connectToWhatsApp = async (): Promise<void> => {
 
     for (const msg of messages) {
       if (!msg.message) continue;
-      if (msg.message.reactionMessage) continue;
-      // Skip protocol messages (edits, deletes, key rotations) - same key.id may
-      // already have been answered when the original was sent.
-      if (msg.message.protocolMessage) continue;
+      // Drop edits, reactions, poll updates, and other protocol-only
+      // payloads. Edits in particular can arrive wrapped as either
+      // protocolMessage (MESSAGE_EDIT) or editedMessage, optionally
+      // nested inside future-proof wrappers - the helper handles both.
+      if (isNonContentMessage(msg.message)) continue;
 
       if (process.env.NODE_ENV !== 'production') {
         log.debug(
