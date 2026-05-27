@@ -94,6 +94,9 @@ export const connectToWhatsApp = async (): Promise<void> => {
     for (const msg of messages) {
       if (!msg.message) continue;
       if (msg.message.reactionMessage) continue;
+      // Skip protocol messages (edits, deletes, key rotations) - same key.id may
+      // already have been answered when the original was sent.
+      if (msg.message.protocolMessage) continue;
 
       if (process.env.NODE_ENV !== 'production') {
         log.debug(
