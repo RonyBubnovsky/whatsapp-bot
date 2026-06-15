@@ -19,6 +19,9 @@ export interface WarningAudioMessage {
   audio: Buffer;
   mimetype: string;
   ptt?: boolean;
+  // Play length in whole seconds. WhatsApp mobile reads this off the message;
+  // without it a voice note plays on WhatsApp Web but shows "malformed" on phones.
+  seconds?: number;
 }
 
 /**
@@ -62,9 +65,12 @@ interface WarningAudioCandidate {
   requiresOpusOgg: boolean;
 }
 
-const OGG_CAPTURE_PATTERN = Buffer.from('OggS', 'ascii');
-const OPUS_HEAD_MARKER = Buffer.from('OpusHead', 'ascii');
-const VORBIS_MARKER = Buffer.from('vorbis', 'ascii');
+// Searched as strings, not byte buffers: Buffer.includes/lastIndexOf accept a
+// string in every @types/node version, sidestepping the Buffer vs
+// Uint8Array<ArrayBuffer> variance mismatch between editor and CLI type defs.
+const OGG_MAGIC = 'OggS';
+const OPUS_HEAD_MARKER = 'OpusHead';
+const VORBIS_MARKER = 'vorbis';
 
 const WARNING_AUDIO_CANDIDATES: WarningAudioCandidate[] = [
   {
@@ -94,7 +100,7 @@ const WARNING_AUDIO_CANDIDATES: WarningAudioCandidate[] = [
  * Output: true when the bytes look like an OGG container with an Opus header.
  */
 export const isOggOpusAudio = (audio: Buffer): boolean => {
-  return audio.subarray(0, OGG_CAPTURE_PATTERN.length).equals(OGG_CAPTURE_PATTERN) &&
+  return audio.subarray(0, OGG_MAGIC.length).toString('latin1') === OGG_MAGIC &&
     audio.includes(OPUS_HEAD_MARKER);
 };
 
@@ -104,7 +110,7 @@ export const isOggOpusAudio = (audio: Buffer): boolean => {
  * Output: a short codec label that is safe to write to logs.
  */
 export const describeOggAudio = (audio: Buffer): 'opus' | 'vorbis' | 'unknown' | 'not-ogg' => {
-  if (!audio.subarray(0, OGG_CAPTURE_PATTERN.length).equals(OGG_CAPTURE_PATTERN)) {
+  if (audio.subarray(0, OGG_MAGIC.length).toString('latin1') !== OGG_MAGIC) {
     return 'not-ogg';
   }
 
@@ -117,6 +123,28 @@ export const describeOggAudio = (audio: Buffer): 'opus' | 'vorbis' | 'unknown' |
   }
 
   return 'unknown';
+};
+
+/**
+ * Reads the play length of an OGG Opus voice note in whole seconds.
+ * Input: the file bytes of an OGG Opus audio file.
+ * Output: duration in seconds, or 0 when it cannot be read.
+ *
+ * How: Opus always clocks its samples at 48000 Hz. The last OGG page carries a
+ * "granule position" = total sample count, so seconds = samples / 48000.
+ * ponytail: reads only the last page's granulepos; fine for one short clip.
+ * If you ever send long or chained-stream audio, parse every page instead.
+ */
+export const getOggOpusDurationSeconds = (audio: Buffer): number => {
+  const lastPage = audio.lastIndexOf('OggS');
+  if (lastPage < 0 || lastPage + 14 > audio.length) {
+    return 0;
+  }
+
+  const granulePosition = audio.readBigUInt64LE(lastPage + 6);
+  const seconds = Number(granulePosition) / 48000;
+
+  return Number.isFinite(seconds) && seconds > 0 ? Math.round(seconds) : 0;
 };
 
 /**
@@ -146,6 +174,8 @@ export const getWarningAudioMessage = (appRoot: string): WarningAudioResult => {
         continue;
       }
 
+      const seconds = candidate.requiresOpusOgg ? getOggOpusDurationSeconds(audio) : 0;
+
       return {
         status: 'found',
         fileName: candidate.fileName,
@@ -154,6 +184,7 @@ export const getWarningAudioMessage = (appRoot: string): WarningAudioResult => {
           audio,
           mimetype: candidate.mimetype,
           ...(candidate.ptt === undefined ? {} : { ptt: candidate.ptt }),
+          ...(seconds > 0 ? { seconds } : {}),
         },
         skipped,
       };
