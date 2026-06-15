@@ -12,6 +12,7 @@ import path from 'node:path';
 import test from 'node:test';
 import {
   describeOggAudio,
+  getOggOpusDurationSeconds,
   getWarningAudioMessage,
   isOggOpusAudio,
 } from './warningAudio';
@@ -26,6 +27,19 @@ const OGG_VORBIS_BYTES = Buffer.concat([
   Buffer.from('OggS', 'ascii'),
   Buffer.from([0, 1, 2, 3]),
   Buffer.from('vorbis', 'ascii'),
+]);
+
+// OGG Opus bytes whose last page reports a granule position of 96000 samples.
+// At Opus' fixed 48000 Hz clock that is exactly 2 seconds of audio.
+const OGG_OPUS_2S_GRANULE = Buffer.alloc(8);
+OGG_OPUS_2S_GRANULE.writeBigUInt64LE(96000n);
+const OGG_OPUS_2S_BYTES = Buffer.concat([
+  Buffer.from('OggS', 'ascii'),
+  Buffer.from([0, 2]),
+  Buffer.from('OpusHead', 'ascii'),
+  Buffer.from('OggS', 'ascii'),
+  Buffer.from([0, 4]),
+  OGG_OPUS_2S_GRANULE,
 ]);
 
 /**
@@ -74,4 +88,18 @@ test('getWarningAudioMessage returns OGG Opus as a push-to-talk message', () => 
   assert.equal(result.status === 'found' ? result.fileName : undefined, 'chat_response.ogg');
   assert.equal(result.status === 'found' ? result.message.mimetype : undefined, 'audio/ogg; codecs=opus');
   assert.equal(result.status === 'found' ? result.message.ptt : undefined, true);
+});
+
+test('getOggOpusDurationSeconds reads duration from the last page granule', () => {
+  assert.equal(getOggOpusDurationSeconds(OGG_OPUS_2S_BYTES), 2);
+  assert.equal(getOggOpusDurationSeconds(Buffer.from('not-an-ogg-file')), 0);
+});
+
+test('getWarningAudioMessage attaches duration so phones can play the voice note', () => {
+  const appRoot = createTempAppRoot();
+  fs.writeFileSync(path.join(appRoot, 'chat_response.ogg'), OGG_OPUS_2S_BYTES);
+
+  const result = getWarningAudioMessage(appRoot);
+
+  assert.equal(result.status === 'found' ? result.message.seconds : undefined, 2);
 });
